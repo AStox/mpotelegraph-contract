@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-// SPDX-License-Identifier: MIT
 // pragma solidity >=0.8.0 <0.9.0;
 
 /// @dev Note that this is a very stripped down ERC-721 knock-off with gas savings as the highest priority. Some features may be unsafe or missing.
@@ -74,7 +73,7 @@ contract MPOTelegraph {
 
     // UNSAFE - USE AT OWN RISK
     function safeTransferFrom(address _from, address _to, uint256 _tokenId) public { transferFrom(_from, _to, _tokenId); }
-    function safeTransferFrom(address _from, address _to, uint256 _tokenId, bytes calldata data) public { transferFrom(_from, _to, _tokenId); }
+    // function safeTransferFrom(address _from, address _to, uint256 _tokenId, bytes calldata data) public { transferFrom(_from, _to, _tokenId); }
     
     // Ignored
     function balanceOf(address _owner) public view virtual returns (uint256) { return 0; }
@@ -96,7 +95,6 @@ contract MPOTelegraph {
 
     // Other functions ------------------------------------------------------>>
 
-    // function mint(uint256 id, address to, string calldata line1, string calldata line2, string calldata line3, string calldata line4) public payable {
     function mint(uint256 id, address to, string calldata text) public payable {
     // function mint(uint256 id, address to, string memory input) public payable {
         require(msg.value >= PRICE, "Send more ETH");
