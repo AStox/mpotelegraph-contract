@@ -93,11 +93,11 @@ contract MPOTelegraph {
     // Other functions ------------------------------------------------------>>
 
     function mint(uint256 id, address to, string calldata text) public payable {
-    // function mint(uint256 id, address to, string memory input) public payable {
+        require(to != address(0), "No recipient");
         require(msg.value >= PRICE, "Send more ETH");
         require(ownership[id] == address(0), "ID already in use");
 
-        ownership[id] = msg.sender;
+        ownership[id] = to;
         toFrom[id] = Telegraph(to, msg.sender);
 
         emit Transfer(address(0), to, id);
