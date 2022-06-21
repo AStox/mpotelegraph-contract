@@ -32,7 +32,8 @@ contract ContractTest is Test {
         assertTrue(true);
         // assertTrue(mpo.ownerOf(id) == address1);
     }
-    function testFailMintToZero(uint256 id) public {
+    function testMintToZero(uint256 id) public {
+        vm.expectRevert("No recipient");
         mpo.mint{value:0.001e18}(id, address(0), "hello world");
     }
     function testMintTransferEvent(uint256 id, address to) public {
@@ -68,13 +69,44 @@ contract ContractTest is Test {
     function testReplySuccess(uint256 id, address address1, address address2) public {
         vm.assume(address1 != address(0));
         vm.assume(address2 != address(0));
+        vm.assume(address2 != address1);
         hoax(address1);
         mpo.mint{value:0.001e18}(id, address2, "hello world");
-        hoax(address2);
-        mpo.reply(id, "oh! hello there");
-        // assertTrue(mpo.ownerOf(id) == address(address2));
+        vm.prank(address2);
+        mpo.reply(id, address1, "oh! hello there");
+        assertTrue(mpo.ownerOf(id) == address(address1));
     }
-    // function replyWrongId() public {}
+
+    function testReplyMissingId(uint256 id1, uint256 id2, address address1, address address2) public {
+        vm.assume(address1 != address(0));
+        vm.assume(address2 != address(0));
+        vm.assume(address2 != address1);
+        vm.assume(id1 != id2);
+        hoax(address1);
+        mpo.mint{value:0.001e18}(id1, address2, "hello world");
+        vm.prank(address2);
+        vm.expectRevert("ID doesn't exist");
+        mpo.reply(id2, address1, "oh! hello there");
+    }
+
+    function testReplyWrongId(uint256 id1, uint256 id2, address address1, address address2) public {
+        vm.assume(address1 != address(0));
+        vm.assume(address2 != address(0));
+        vm.assume(address1 != address2);
+        vm.assume(id1 != id2);
+        mpo.mint{value:0.001e18}(id1, address1, "hello world");
+        vm.prank(address2);
+        vm.expectRevert("Not your message to burn");
+        mpo.reply(id1, address1, "oh! hello there");
+    }
+    function testReplyToSelf(uint256 id1, address address1) public {
+        vm.assume(address1 != address(0));
+        hoax(address1);
+        mpo.mint{value:0.001e18}(id1, address1, "hello world");
+        hoax(address1);
+        vm.expectRevert("Sorry, can't reply to yourself");
+        mpo.reply(id1, address1, "oh! hello there");
+    }
     // function burn() public {}
     // function changeTokenURI() public {}
     // function transfer() public {}

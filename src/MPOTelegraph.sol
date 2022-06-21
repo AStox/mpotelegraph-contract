@@ -98,16 +98,18 @@ contract MPOTelegraph {
         require(ownership[id] == address(0), "ID already in use");
 
         ownership[id] = to;
-        toFrom[id] = Telegraph(to, msg.sender);
+        // toFrom[id] = Telegraph(to, msg.sender);
 
         emit Transfer(address(0), to, id);
         emit Mint(msg.sender, id, text);
     }
 
-    function reply(uint256 id, string calldata text) public {
-        require(msg.sender == ownership[id] || msg.sender == getApproved(id) || isApprovedForAll(ownership[id], msg.sender), "Unauthorized");
-        toFrom[id] = Telegraph(toFrom[id].from, toFrom[id].to);
-        ownership[id] = toFrom[id].to;
+    function reply(uint256 id, address to, string calldata text) public {
+        require(to != msg.sender, "Sorry, can't reply to yourself");
+        require(ownership[id] != address(0), "ID doesn't exist");
+        require(msg.sender == ownership[id] || msg.sender == getApproved(id) || isApprovedForAll(ownership[id], msg.sender), "Not your message to burn");
+        // toFrom[id] = Telegraph(toFrom[id].from, toFrom[id].to);
+        ownership[id] = to;
         // Burn for housekeeping
         emit Transfer(ownership[id], address(0), id);
         // Transfer to prev 'from' address (now 'to' address) to bypass marketplace hidden folder rules
