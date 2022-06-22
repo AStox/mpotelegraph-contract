@@ -9,6 +9,10 @@ contract ContractTest is Test {
     event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
     event Mint(address indexed from, uint256 indexed tokenId, string text);
 
+    function compareString(string memory a, string memory b) private returns (bool) {
+        return keccak256(abi.encode(a)) == keccak256(abi.encode(b));
+    }
+
     function setUp() public {
         mpo = new MPOTelegraph();
     }
@@ -17,10 +21,6 @@ contract ContractTest is Test {
         vm.assume(to != address(0));
         mpo.mint{value:0.001e18}(id, to, "hello world");
         assertTrue(mpo.ownerOf(id) == address(to));
-    }
-
-    function empty(uint256 id, address to) public payable {
-        // return true;
     }
 
     function testMintSuccessPrank(uint256 id, address address1, address address2) public {
@@ -107,10 +107,64 @@ contract ContractTest is Test {
         vm.expectRevert("Sorry, can't reply to yourself");
         mpo.reply(id1, address1, "oh! hello there");
     }
-    // function burn() public {}
-    // function changeTokenURI() public {}
+
+    function testTokenURI() public {
+        string memory uri = "https://9amtetu7r1.execute-api.us-east-1.amazonaws.com/?id=5";
+        assertTrue(compareString(mpo.tokenURI(5), uri));
+    }
+
+    function testUpdateBaseURI() public {
+        mpo.updateBaseURI("hello");
+        assertTrue(compareString(mpo.baseURI(), "hello"));
+    }
+
+    function testUnauthorizedUpdateBaseURI(address address1) public {
+        vm.assume(address1 != address(this));
+        vm.prank(address1);
+        vm.expectRevert("Unauthorized");
+        mpo.updateBaseURI("hello");
+    }
+
+    function testTransferOwnership(address address1) public {
+        assertTrue(mpo.owner() == address(this));
+        mpo.transferOwnership(address1);
+        assertTrue(mpo.owner() == address1);
+    }
+
+    function testTransferOwnershipUnauthorized(address address1) public {
+        vm.assume(address1 != address(this));
+        assertTrue(mpo.owner() == address(this));
+        vm.prank(address1);
+        vm.expectRevert("Unauthorized");
+        mpo.transferOwnership(address1);
+    }
+
+    function testUpdatePrice() public {
+        assertTrue(mpo.price() == 0.001e18);
+        mpo.updatePrice(1);
+        assertTrue(mpo.price() == 1);
+    }
+
+    function testUpdatePriceUnauthorized(address address1) public {
+        vm.assume(address1 != address(this));
+        vm.prank(address1);
+        vm.expectRevert("Unauthorized");
+        mpo.updatePrice(1);
+    }
+
+    function testBurn() public {
+        // to burn just reply to zero address
+    }
+
+    function testWithdraw(address address1) public {
+        mpo.transferOwnership(address1);
+        assertTrue(address1.balance == 0);
+        vm.deal(address(mpo), 1e18);
+        mpo.withdraw();
+        assertTrue(address1.balance == 1e18);
+    }
+
     // function transfer() public {}
-    // function withdraw() public {}
 
 
 

@@ -1,28 +1,21 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.13;
 
-// pragma solidity >=0.8.0 <0.9.0;
-
-/// @dev Note that this is a very stripped down ERC-721 knock-off with gas savings as the highest priority. Some features may be unsafe or missing.
+/// @dev This is a very stripped down ERC-721 knock-off with gas savings as a top priority. Some features may be unsafe or missing.
 
 contract MPOTelegraph {
-    address private owner;
-    uint256 public PRICE = 1000000000000000; // 0.001 eth
+    address private _owner;
+    uint256 private _price = 1000000000000000; // 0.001 eth
     string public name = "Metaversal Post Office Telegraph";
     string public symbol = "MPOT";
+    string public baseURI = "https://9amtetu7r1.execute-api.us-east-1.amazonaws.com/?id=";
 
     constructor() {
-        owner = msg.sender;
-    }
-
-    struct Telegraph {
-        address to;
-        address from;
+        _owner = msg.sender;
     }
 
     // ERC721 --------------------------------------------------------------->>
     mapping(uint256 => address) private ownership;
-    mapping(uint256 => Telegraph) private toFrom;
     mapping(uint256 => address) private approvedForToken;
     mapping(address => mapping(address => bool)) private approvedForAll;
     event Transfer(address indexed from, address indexed to, uint256 indexed tokenId);
@@ -70,14 +63,14 @@ contract MPOTelegraph {
 
     // UNSAFE - USE AT OWN RISK
     function safeTransferFrom(address _from, address _to, uint256 _tokenId) public { transferFrom(_from, _to, _tokenId); }
-    // function safeTransferFrom(address _from, address _to, uint256 _tokenId, bytes calldata data) public { transferFrom(_from, _to, _tokenId); }
+    function safeTransferFrom(address _from, address _to, uint256 _tokenId, bytes calldata data) public { transferFrom(_from, _to, _tokenId); }
     
     // Ignored
     function balanceOf(address _owner) public view virtual returns (uint256) { return 0; }
     // <<--------------------------------------------------------------- ERC721
 
     function tokenURI(uint256 _tokenId) public view virtual returns (string memory) {
-        return string(abi.encodePacked("https://9amtetu7r1.execute-api.us-east-1.amazonaws.com/?id=", uint2str(_tokenId)));
+        return string(abi.encodePacked(baseURI, uint2str(_tokenId)));
     }
     // <<------------------------------------------------------- ERC721Metadata
 
@@ -92,15 +85,38 @@ contract MPOTelegraph {
 
     // Other functions ------------------------------------------------------>>
 
+    function updateBaseURI(string memory uri) public {
+        require(msg.sender == _owner, "Unauthorized");
+        baseURI = uri;
+    }
+
+    function price() public view returns (uint256) {
+        return _price;
+    }
+
+    function updatePrice(uint256 newPrice) public {
+        require(msg.sender == _owner, "Unauthorized");
+        _price = newPrice;
+    }
+
+    function owner() public view returns (address) {
+        return _owner;
+    }
+
+    function transferOwnership(address newOwner) public {
+        require(msg.sender == _owner, "Unauthorized");
+        _owner = newOwner;
+    }
+
     function mint(uint256 id, address to, string calldata text) public payable {
         require(to != address(0), "No recipient");
-        require(msg.value >= PRICE, "Send more ETH");
+        require(msg.value >= _price, "Send more ETH");
         require(ownership[id] == address(0), "ID already in use");
-
         ownership[id] = to;
-        // toFrom[id] = Telegraph(to, msg.sender);
 
+        // What a normal mint event looks like
         emit Transfer(address(0), to, id);
+        // Additional mint event to get the sender and text on-chain
         emit Mint(msg.sender, id, text);
     }
 
@@ -108,7 +124,6 @@ contract MPOTelegraph {
         require(to != msg.sender, "Sorry, can't reply to yourself");
         require(ownership[id] != address(0), "ID doesn't exist");
         require(msg.sender == ownership[id] || msg.sender == getApproved(id) || isApprovedForAll(ownership[id], msg.sender), "Not your message to burn");
-        // toFrom[id] = Telegraph(toFrom[id].from, toFrom[id].to);
         ownership[id] = to;
         // Burn for housekeeping
         emit Transfer(ownership[id], address(0), id);
@@ -124,7 +139,7 @@ contract MPOTelegraph {
     }
 
     function withdraw() public payable {
-        (bool success, ) = payable(owner).call{value: msg.value}("");
+        (bool success, ) = payable(_owner).call{value: address(this).balance}("");
         require(success, "Could not transfer money to contractOwner");
     }
 
