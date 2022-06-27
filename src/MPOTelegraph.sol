@@ -69,6 +69,7 @@ contract MPOTelegraph {
     function balanceOf(address _owner) public view virtual returns (uint256) { return 0; }
     // <<--------------------------------------------------------------- ERC721
 
+    // ERC721Metadata-------------------------------------------------------->>
     function tokenURI(uint256 _tokenId) public view virtual returns (string memory) {
         return string(abi.encodePacked(baseURI, uint2str(_tokenId)));
     }
